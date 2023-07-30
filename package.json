@@ -1,5 +1,5 @@
 {
-  "name": "nest-schematic-poc",
+  "name": "nestjs-mimo-schematics",
   "version": "0.0.1",
   "license": "MIT",
   "description": "Mimo powerful tool to scaffold CQRS and Onion Architecture ",
