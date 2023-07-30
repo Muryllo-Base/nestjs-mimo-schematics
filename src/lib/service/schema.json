@@ -1,45 +1,33 @@
 {
   "$schema": "http://json-schema.org/schema",
-  "$id": "SchematicsNestService",
-  "title": "Nest Service Options Schema",
+  "$id": "SchematicsMimoService",
+  "title": "Mimo Service Options Schema",
   "type": "object",
   "properties": {
     "name": {
       "type": "string",
       "description": "The name of the service.",
+      "x-prompt": "What name would you like to use for the service?",
       "$default": {
         "$source": "argv",
         "index": 0
-      },
-      "x-prompt": "What name would you like to use for the service?"
+      }
     },
-    "path": {
+    "serviceType": {
       "type": "string",
-      "format": "path",
-      "description": "The path to create the service."
-    },
-    "language": {
-      "type": "string",
-      "description": "Nest service language (ts/js)."
-    },
-    "sourceRoot": {
-      "type": "string",
-      "description": "Nest service source root directory."
-    },
-    "flat": {
-      "type": "boolean",
-      "default": false,
-      "description": "Flag to indicate if a directory is created."
-    },
-    "spec": {
-      "type": "boolean",
-      "default": true,
-      "description": "Specifies if a spec file is generated."
-    },
-    "specFileSuffix": {
-      "type": "string",
-      "default": "spec",
-      "description": "Specifies the file suffix of spec files."
+      "default": "common",
+      "enum": [
+        "common",
+        "domain"
+      ],
+      "x-prompt": {
+        "message": "Which type of Service you like to use?",
+        "type": "list",
+        "items": [
+          { "value": "common", "label": "Common Service [Used to convert entities to DTO and vice versa]" },
+          { "value": "domain", "label": "Domain Service [Used to publish Commands and Queries to CQRS bus]" }
+        ]
+      }
     }
   },
   "required": ["name"]

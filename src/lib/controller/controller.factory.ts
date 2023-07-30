@@ -1,102 +1,103 @@
-import { join, Path, strings } from '@angular-devkit/core';
+import { Path, strings } from '@angular-devkit/core';
+
 import {
-  apply,
-  branchAndMerge,
-  chain,
-  filter,
-  mergeWith,
-  move,
-  noop,
+  Tree,
   Rule,
   SchematicContext,
-  template,
-  Tree,
-  url,
+  OptionIsNotDefinedException,
 } from '@angular-devkit/schematics';
-import { normalizeToKebabOrSnakeCase } from '../../utils/formatting';
+
 import {
-  DeclarationOptions,
-  ModuleDeclarator,
-} from '../../utils/module.declarator';
-import { ModuleFinder } from '../../utils/module.finder';
-import { Location, NameParser } from '../../utils/name.parser';
-import { mergeSourceRoot } from '../../utils/source-root.helpers';
-import { DEFAULT_LANGUAGE } from '../defaults';
+  url,
+  move,
+  apply,
+  chain,
+  template,
+  mergeWith,
+  branchAndMerge,
+} from '@angular-devkit/schematics';
+
 import { ControllerOptions } from './controller.schema';
 
-const ELEMENT_METADATA = 'controllers';
-const ELEMENT_TYPE = 'controller';
+import {
+  addSourceExport,
+  addNestModuleOptionProperty,
+  ensureProjectRoot,
+  ModuleOptionProperty,
+  addSourceImport,
+  getSourceFile,
+  ensureProjectStructure,
+  formatTypescript,
+} from 'src/core';
 
-export function main(options: ControllerOptions): Rule {
-  options = transform(options);
+export function main(factoryOptions: ControllerOptions): Rule {
+  const options = Object.assign({}, factoryOptions);
+
   return (tree: Tree, context: SchematicContext) => {
     return branchAndMerge(
       chain([
-        mergeSourceRoot(options),
-        mergeWith(generate(options)),
-        addDeclarationToModule(options),
+        ensureProjectRoot(),
+        ensureProjectStructure(),
+        validate(options),
+        generate(options),
+        configure(options),
       ]),
     )(tree, context);
   };
 }
 
-function transform(source: ControllerOptions): ControllerOptions {
-  const target: ControllerOptions = Object.assign({}, source);
-  target.metadata = ELEMENT_METADATA;
-  target.type = ELEMENT_TYPE;
-
-  const location: Location = new NameParser().parse(target);
-  target.name = normalizeToKebabOrSnakeCase(location.name);
-  target.path = normalizeToKebabOrSnakeCase(location.path);
-  target.language =
-    target.language !== undefined ? target.language : DEFAULT_LANGUAGE;
-
-  target.specFileSuffix = normalizeToKebabOrSnakeCase(
-    source.specFileSuffix || 'spec',
-  );
-
-  target.path = target.flat
-    ? target.path
-    : join(target.path as Path, target.name);
-  return target;
-}
-
-function generate(options: ControllerOptions) {
-  return (context: SchematicContext) =>
-    apply(url(join('./files' as Path, options.language)), [
-      options.spec 
-        ? noop() 
-        : filter((path) => {
-            const languageExtension = options.language || 'ts';
-            const suffix = `.__specFileSuffix__.${languageExtension}`;
-            return !path.endsWith(suffix)
-        }),
-      template({
-        ...strings,
-        ...options,
-      }),
-      move(options.path),
-    ])(context);
-}
-
-function addDeclarationToModule(options: ControllerOptions): Rule {
+function validate(options: ControllerOptions): Rule {
   return (tree: Tree) => {
-    if (options.skipImport !== undefined && options.skipImport) {
-      return tree;
-    }
-    options.module = new ModuleFinder(tree).find({
-      name: options.name,
-      path: options.path as Path,
-    });
-    if (!options.module) {
-      return tree;
-    }
-    const content = tree.read(options.module).toString();
-    const declarator: ModuleDeclarator = new ModuleDeclarator();
-    tree.overwrite(
-      options.module,
-      declarator.declare(content, options as DeclarationOptions),
+    if (!options.name)
+      throw new OptionIsNotDefinedException('name');
+
+    return tree;
+  }
+}
+
+function generate(options: ControllerOptions): Rule {
+  const source = url('./files' as Path);
+
+  const renderOptions = {
+    ...options,
+    ...strings,
+    fileName: strings.dasherize(options.name),
+  }
+
+  return mergeWith((context: SchematicContext) => apply(source, [
+    template(renderOptions),
+    move('src/api/controllers'),
+  ])(context));
+}
+
+function configure(options: ControllerOptions): Rule {
+  return (tree: Tree) => {
+    const modulePath = 'src/api/modules/api.module.ts';
+    const moduleName = 'ApiModule';
+    const importPath = 'src/api/controllers';
+    const importName = strings.classify(`${options.name}Controller`);
+
+    const indexPath = 'src/api/controllers/index.ts';
+    const controllerName = strings.dasherize(options.name);
+    const exportPath = `./${controllerName}.controller`;
+
+    const moduleFile = getSourceFile(tree, modulePath);
+    const indexFile = getSourceFile(tree, indexPath);
+
+    addSourceExport(indexFile, exportPath);
+    addSourceImport(moduleFile, importPath, importName);
+    addNestModuleOptionProperty(
+      moduleFile,
+      moduleName,
+      importName,
+      ModuleOptionProperty.CONTROLLER
     );
+
+    formatTypescript(moduleFile);
+
+    tree.overwrite(modulePath, moduleFile.getFullText());
+    tree.overwrite(indexPath, indexFile.getFullText());
+
     return tree;
   };
 }

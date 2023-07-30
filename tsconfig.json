@@ -4,11 +4,18 @@
     "target": "ES2021",
     "typeRoots": ["node_modules/@types"],
     "outDir": "dist",
+    "baseUrl": "./",
+    "paths": {
+      "src/*": [
+        "./src/*"
+      ],
+    },
     "declaration": true,
     "removeComments": true,
     "sourceMap": false,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "esModuleInterop": true
   },
-  "include": ["src/utils", "src/lib", "src/index.ts"],
-  "exclude": ["node_modules", "src/**/*.test.ts", "src/**/files/**"]
+  "include": ["src/lib", "src/core", "src/index.ts"],
+  "exclude": ["node_modules", "src/**/files/**"]
 }

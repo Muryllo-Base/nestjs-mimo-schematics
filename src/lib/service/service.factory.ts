@@ -1,101 +1,114 @@
-import { join, Path, strings } from '@angular-devkit/core';
+import { Path, strings } from '@angular-devkit/core';
+
 import {
-  apply,
-  branchAndMerge,
-  chain,
-  filter,
-  mergeWith,
-  move,
-  noop,
+  Tree,
   Rule,
   SchematicContext,
+  OptionIsNotDefinedException,
   SchematicsException,
-  template,
-  Tree,
-  url,
 } from '@angular-devkit/schematics';
-import { isNullOrUndefined } from 'util';
-import { normalizeToKebabOrSnakeCase } from '../../utils/formatting';
-import {
-  DeclarationOptions,
-  ModuleDeclarator,
-} from '../../utils/module.declarator';
-import { ModuleFinder } from '../../utils/module.finder';
-import { Location, NameParser } from '../../utils/name.parser';
-import { mergeSourceRoot } from '../../utils/source-root.helpers';
-import { ServiceOptions } from './service.schema';
 
-export function main(options: ServiceOptions): Rule {
-  options = transform(options);
+import {
+  url,
+  move,
+  apply,
+  chain,
+  template,
+  mergeWith,
+  branchAndMerge,
+} from '@angular-devkit/schematics';
+
+import { SeederOptions } from './service.schema';
+
+import {
+  ensureProjectRoot,
+  ensureProjectStructure,
+  addSourceExport,
+  addSourceImport,
+  addNestModuleOptionProperty,
+  getSourceFile,
+  ModuleOptionProperty,
+  formatTypescript,
+} from 'src/core';
+
+export function main(factoryOptions: SeederOptions): Rule {
+  const options = Object.assign({}, factoryOptions);
+
   return (tree: Tree, context: SchematicContext) => {
     return branchAndMerge(
       chain([
-        mergeSourceRoot(options),
-        addDeclarationToModule(options),
-        mergeWith(generate(options)),
+        ensureProjectRoot(),
+        ensureProjectStructure(),
+        validate(options),
+        generate(options),
+        configure(options),
       ]),
     )(tree, context);
   };
 }
 
-function transform(source: ServiceOptions): ServiceOptions {
-  const target: ServiceOptions = Object.assign({}, source);
-  target.metadata = 'providers';
-  target.type = 'service';
-
-  if (isNullOrUndefined(target.name)) {
-    throw new SchematicsException('Option (name) is required.');
-  }
-  const location: Location = new NameParser().parse(target);
-  target.name = normalizeToKebabOrSnakeCase(location.name);
-  target.path = normalizeToKebabOrSnakeCase(location.path);
-  target.language = target.language !== undefined ? target.language : 'ts';
-  target.specFileSuffix = normalizeToKebabOrSnakeCase(
-    source.specFileSuffix || 'spec',
-  );
-
-  target.path = target.flat
-    ? target.path
-    : join(target.path as Path, target.name);
-  return target;
-}
-
-function generate(options: ServiceOptions) {
-  return (context: SchematicContext) =>
-    apply(url(join('./files' as Path, options.language)), [
-      options.spec 
-        ? noop() 
-        : filter((path) => {
-            const languageExtension = options.language || 'ts';
-            const suffix = `.__specFileSuffix__.${languageExtension}`;
-            return !path.endsWith(suffix)
-        }),
-      template({
-        ...strings,
-        ...options,
-      }),
-      move(options.path),
-    ])(context);
-}
-
-function addDeclarationToModule(options: ServiceOptions): Rule {
+function validate(options: SeederOptions): Rule {
   return (tree: Tree) => {
-    if (options.skipImport !== undefined && options.skipImport) {
-      return tree;
+    if (!options.name)
+      throw new OptionIsNotDefinedException('name');
+    if (!options.serviceType)
+      throw new OptionIsNotDefinedException('serviceType');
+
+    if (options.serviceType == 'domain') {
+      throw new SchematicsException('Sorry! The Domain Service scaffold/schematic is not available yet.');
     }
-    options.module = new ModuleFinder(tree).find({
-      name: options.name,
-      path: options.path as Path,
-    });
-    if (!options.module) {
-      return tree;
-    }
-    const content = tree.read(options.module).toString();
-    const declarator: ModuleDeclarator = new ModuleDeclarator();
-    tree.overwrite(
-      options.module,
-      declarator.declare(content, options as DeclarationOptions),
+
+    return tree;
+  }
+}
+
+function generate(options: SeederOptions): Rule {
+  const commonSource = url('./files/common' as Path);
+
+  const renderOptions = {
+    ...options,
+    ...strings,
+    fileName: strings.dasherize(options.name),
+  }
+
+  return mergeWith((context: SchematicContext) => apply(commonSource, [
+    template(renderOptions),
+    move('src/common/services'),
+  ])(context));
+}
+
+function configure(options: SeederOptions): Rule {
+  return (tree: Tree) => {
+    const moduleName = 'ServicesModule';
+    const modulePath = 'src/common/modules/services.module.ts';
+    const indexPath = 'src/common/services/index.ts';
+    const importPath = 'src/common/services';
+    const importName = `${strings.classify(options.name)}Service`;
+    const exportPath = `./${strings.dasherize(options.name)}.service`;
+
+    const moduleFile = getSourceFile(tree, modulePath);
+    const indexFile = getSourceFile(tree, indexPath);
+
+    addSourceExport(indexFile, exportPath);
+    addSourceImport(moduleFile, importPath, importName);
+    addNestModuleOptionProperty(
+      moduleFile,
+      moduleName,
+      importName,
+      ModuleOptionProperty.PROVIDER
     );
+    addNestModuleOptionProperty(
+      moduleFile,
+      moduleName,
+      importName,
+      ModuleOptionProperty.EXPORT
+    );
+
+    formatTypescript(moduleFile);
+
+    tree.overwrite(modulePath, moduleFile.getFullText());
+    tree.overwrite(indexPath, indexFile.getFullText());
+
     return tree;
   };
 }

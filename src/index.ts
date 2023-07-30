@@ -1,2 +1,1 @@
-export * from './utils';
-export * from './lib/defaults';
+export * from './core';
