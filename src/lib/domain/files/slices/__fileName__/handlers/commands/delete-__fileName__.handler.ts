@@ -12,6 +12,12 @@ export class Delete<%= classify(name) %>Handler implements ICommandHandler<Delet
   ) {}
 
   async execute(command: Delete<%= classify(name) %>Command): Promise<<%= classify(name) %>> {
+    // Here is the perfect place to put strong and heavy business logic.
+    // In CQRS, the Command handlers should perform data insertion, 
+    // update and deletion using a repository and process the data 
+    // to return a proper response.
+
+    // If you want to stop the flow, throw an specialized domain exception.
     return await this.repository.deleteUnique(command.<%= camelize(name) %>Id);
   }
 

@@ -1,6 +1,6 @@
 {
   "name": "nestjs-mimo-schematics",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "license": "MIT",
   "description": "Mimo powerful tool to scaffold CQRS and Onion Architecture ",
   "main": "dist/index.js",
@@ -9,12 +9,11 @@
     "dist/**/*"
   ],
   "scripts": {
+    "prepublishOnly": "npm run build",
     "build": "shx rm -rf dist && tsc && tsc-alias",
     "postbuild": "npm run copy:collection && npm run copy:lib",
     "copy:lib": "cpx src/lib/**/files/**/*.* dist/lib",
-    "copy:collection": "cpx src/collection.json dist && cpx src/lib/**/schema.json dist/lib",
-    "prepare": "npm run build",
-    "publish": "npm publish --access public"
+    "copy:collection": "cpx src/collection.json dist && cpx src/lib/**/schema.json dist/lib"
   },
   "repository": {
     "type": "git",

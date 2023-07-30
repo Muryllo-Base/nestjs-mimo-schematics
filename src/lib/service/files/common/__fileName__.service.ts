@@ -18,7 +18,7 @@ export class <%= classify(name) %>Service {
   // and then pass it on to the domain. Conversions into DTOs are also done here.
 
   // async create<%= classify(name) %>(<%= camelize(name) %>: <%= classify(name) %>RequestDto): Promise<<%= classify(name) %>ResponseDto> {
-  //   const entity = await this.<%= camelize(name) %>DomainService.create(<%= camelize(name) %>.title);
+  //   const entity = await this.<%= camelize(name) %>DomainService.create(<%= camelize(name) %>.foo);
   //   return entity.toDto(<%= classify(name) %>ResponseDto);
   // }
 
@@ -28,7 +28,7 @@ export class <%= classify(name) %>Service {
   // }
 
   // async update<%= classify(name) %>(<%= camelize(name) %>Id: string, <%= camelize(name) %>: <%= classify(name) %>RequestDto): Promise<<%= classify(name) %>ResponseDto> {
-  //   const entity = await this.<%= camelize(name) %>DomainService.updateById(<%= camelize(name) %>Id, <%= camelize(name) %>.title);
+  //   const entity = await this.<%= camelize(name) %>DomainService.updateById(<%= camelize(name) %>Id, <%= camelize(name) %>.foo);
   //   return entity.toDto(<%= classify(name) %>ResponseDto);
   // }
 

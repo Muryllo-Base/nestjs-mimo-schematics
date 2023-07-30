@@ -18,8 +18,8 @@ export class <%= classify(name) %>DomainService {
     private readonly queryBus: QueryBus
   ) {}
 
-  async create(title: string): Promise<<%= classify(name) %>> {
-    const command = new Create<%= classify(name) %>Command(title);
+  async create(foo: string): Promise<<%= classify(name) %>> {
+    const command = new Create<%= classify(name) %>Command(foo);
     return this.commandBus.execute<ICommand, <%= classify(name) %>>(command);
   }
 
@@ -33,8 +33,8 @@ export class <%= classify(name) %>DomainService {
     return this.commandBus.execute<ICommand, <%= classify(name) %>>(command);
   }
 
-  async updateById(<%= camelize(name) %>Id: string, title: string): Promise<<%= classify(name) %>> {
-    const command = new Update<%= classify(name) %>Command(<%= camelize(name) %>Id, title);
+  async updateById(<%= camelize(name) %>Id: string, foo: string): Promise<<%= classify(name) %>> {
+    const command = new Update<%= classify(name) %>Command(<%= camelize(name) %>Id, foo);
     return this.commandBus.execute<ICommand, <%= classify(name) %>>(command);
   }
 

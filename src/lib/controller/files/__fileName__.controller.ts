@@ -4,6 +4,11 @@ import { Controller, Get } from '@nestjs/common';
 @Controller(<%= `'${dasherize(name)}'` %>)
 export class <%= classify(name) %>Controller {
 
+  // This is a controller sample that can be used with Guards, Swagger, Services, etc.
+  // You can put your endpoints here.
+  // REMEMBER: Controllers should primarily route requests to the appropriate services.
+  // They should not contain business logic. That's the responsibility of services and CQRS handlers.
+
   constructor(
     /* private readonly <%= camelize(name) %>Service: <%= classify(name) %>Service, */
   ) {}

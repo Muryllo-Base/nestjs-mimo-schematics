@@ -12,7 +12,13 @@ export class Update<%= classify(name) %>Handler implements ICommandHandler<Updat
   ) {}
 
   async execute(command: Update<%= classify(name) %>Command): Promise<<%= classify(name) %>> {
-    return this.repository.updateUnique(command.<%= camelize(name) %>Id, { title: command.title });
+    // Here is the perfect place to put strong and heavy business logic.
+    // In CQRS, the Command handlers should perform data insertion, 
+    // update and deletion using a repository and process the data 
+    // to return a proper response.
+
+    // If you want to stop the flow, throw an specialized domain exception.
+    return this.repository.updateUnique(command.<%= camelize(name) %>Id, { foo: command.foo });
   }
 
 }

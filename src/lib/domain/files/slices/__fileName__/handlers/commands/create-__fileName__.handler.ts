@@ -12,7 +12,13 @@ export class Create<%= classify(name) %>Handler implements ICommandHandler<Creat
   ) {}
 
   async execute(command: Create<%= classify(name) %>Command): Promise<<%= classify(name) %>> {
-    return await this.repository.create(command.title);
+    // Here is the perfect place to put strong and heavy business logic.
+    // In CQRS, the Command handlers should perform data insertion, 
+    // update and deletion using a repository and process the data 
+    // to return a proper response.
+
+    // If you want to stop the flow, throw an specialized domain exception.
+    return await this.repository.create(command.foo);
   }
 
 }
