@@ -110,10 +110,46 @@ export function addChainedCallExpression(
   return file;
 }
 
+export function addPropertyInReturnExpression(
+  file: SourceFile,
+  className: string,
+  methodName: string,
+  propertyName: string,
+  propertyValue: string,
+): SourceFile {
+  const classDeclaration = file.getClass(className);
+  if (!classDeclaration) {
+    throw new SchematicsException(`The class ${className} doesnt exist.`);
+  }
+
+  const methodDeclaration = classDeclaration.getMethod(methodName);
+  if (!methodDeclaration) {
+    throw new SchematicsException(`The method ${methodName} doesnt exist in the class ${className}.`);
+  }
+
+  const bodyDeclaration = methodDeclaration.getBody();
+  const returnStatement = bodyDeclaration.getFirstChildByKind(SyntaxKind.ReturnStatement);
+  if (!returnStatement) {
+    throw new SchematicsException(`The method ${methodName} doesnt seen to have an return statement.`);
+  }
+
+  const objectDeclaration = returnStatement.getFirstChildByKind(SyntaxKind.ObjectLiteralExpression);
+  if (!objectDeclaration) {
+    throw new SchematicsException(`The method ${methodName} doesnt seen to have an object as return type.`);
+  }
+
+  objectDeclaration.addPropertyAssignment({
+    name: propertyName,
+    initializer: propertyValue,
+  });
+  
+  return file;
+}
+
 export function formatTypescript(file: SourceFile) {
   file.formatText({
-    indentSize: 2,
     tabSize: 2,
+    indentSize: 2,
     convertTabsToSpaces: true,
     trimTrailingWhitespace: true,
   });

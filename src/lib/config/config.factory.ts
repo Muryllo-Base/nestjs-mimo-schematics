@@ -23,6 +23,7 @@ import {
   addArrayElementByVariableName,
   addChainedCallExpression,
   addExplicitInject,
+  addPropertyInReturnExpression,
   addSourceExport,
   addSourceImport,
   ensureProjectRoot,
@@ -84,18 +85,23 @@ function configure(options: ConfigOptions): Rule {
     const configName = strings.dasherize(options.name);
     const configIdentifier = strings.classify(options.name);
     const configProperty = strings.camelize(options.name);
+
     const configKey = `${configIdentifier}Config.KEY`;
     const configService = 'ConfigurationDomainService';
+
     const importPath = 'src/domain/config/slices';
     const slicesIndexPath = 'src/domain/config/slices/index.ts';
     const schemasIndexPath = 'src/domain/config/schemas/index.ts';
+    const configServicePath = 'src/common/services/configuration.service.ts';
     const domainServicePath = 'src/domain/config/services/configuration-domain.service.ts';
+
     const slicePath = `./${configName}.config`;
     const schemaPath = `./${configName}.schema`;
 
     const slicesIndexFile = getSourceFile(tree, slicesIndexPath);
     const schemasIndexFile = getSourceFile(tree, schemasIndexPath);
     const domainServiceFile = getSourceFile(tree, domainServicePath);
+    const configServiceFile = getSourceFile(tree, configServicePath);
 
     addSourceImport(domainServiceFile, importPath, `${configIdentifier}Config`, true);
     addSourceImport(domainServiceFile, importPath, `${configIdentifier}ConfigType`, true);
@@ -105,15 +111,30 @@ function configure(options: ConfigOptions): Rule {
     addSourceExport(schemasIndexFile, schemaPath);
     addArrayElementByVariableName(slicesIndexFile, 'ConfigSlices', `${configIdentifier}Config`);
     addChainedCallExpression(schemasIndexFile, 'ConfigSchema', `concat(${configIdentifier}Schema)`);
-    addExplicitInject(domainServiceFile, configService, configKey, configProperty, `${configIdentifier}ConfigType`);
+    addExplicitInject(
+      domainServiceFile, 
+      configService, 
+      configKey, 
+      configProperty, 
+      `${configIdentifier}ConfigType`
+    );
+    addPropertyInReturnExpression(
+      configServiceFile, 
+      'ConfigurationService', 
+      'getConfigurations', 
+      configProperty, 
+      `this.${strings.camelize(configService)}.${configProperty}`
+    );
 
     formatTypescript(slicesIndexFile);
     formatTypescript(schemasIndexFile);
     formatTypescript(domainServiceFile);
+    formatTypescript(configServiceFile);
 
     tree.overwrite(slicesIndexPath, slicesIndexFile.getFullText());
     tree.overwrite(schemasIndexPath, schemasIndexFile.getFullText());
     tree.overwrite(domainServicePath, domainServiceFile.getFullText());
+    tree.overwrite(configServicePath, configServiceFile.getFullText());
 
     return tree;
   };

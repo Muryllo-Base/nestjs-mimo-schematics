@@ -1,6 +1,6 @@
 {
   "name": "nestjs-mimo-schematics",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "license": "MIT",
   "description": "Mimo powerful tool to scaffold CQRS and Onion Architecture ",
   "main": "dist/index.js",
